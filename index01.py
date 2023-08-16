@@ -35,19 +35,16 @@ def makeDriver():
         pass
 
 def capture():
-    while len(driver.find_elements(By.CLASS_NAME, "MuiTypography-root")) == 0 :
-        time.sleep(0.5)
+    while len(driver.find_elements(By.CLASS_NAME, "MuiTypography-h1")) == 0 :
+        time.sleep(1)
     title = driver.find_element(By.CLASS_NAME, 'MuiTypography-h1').text
     header = driver.find_element(By.XPATH, '//section/p[1]').text
-    content = [];
+    content = []
     content_list = driver.find_elements(By.CLASS_NAME, "foldable-section-with-menu")
     for one in content_list:
         content.append({'title': one.find_element(By.CLASS_NAME, 'MuiAccordionSummary-root').text, "content": one.find_element(By.CLASS_NAME, 'MuiCollapse-container').text})
 
-    result = {'title': title, 'header': header, 'content': content}
-    driver.back
-    time.sleep(1)
-    return result
+    return {'title': title, 'header': header, 'body': content}
     # print(title)
     # print()
     # print(header)
@@ -55,21 +52,26 @@ def capture():
     # print(content)
 
 def scrapList():
+    global driver, results
     while len(driver.find_elements(By.CLASS_NAME, "item-cursor-hand")) == 0 :
         time.sleep(0.5)
 
     url_list = []
+    url_list1 = []
     flag = False
     while True:
         all_list = driver.find_elements(By.CLASS_NAME, 'search-item-right')
         for one in all_list:
             url = one.find_element(By.TAG_NAME, 'a').get_property('href')
-            date = one.find_elements(By.CLASS_NAME, 'col-xs-6')[1].find_elements(By.TAG_NAME, 'div')[1].text
-            doctype = one.find_elements(By.CLASS_NAME, 'col-xs-6')[2].find_elements(By.TAG_NAME, 'div')[1].text
-            if url in url_list:
+            date = one.find_elements(By.CLASS_NAME, 'col-xs-6')[0].find_elements(By.TAG_NAME, 'div')[0].text
+            doctype = one.find_elements(By.CLASS_NAME, 'col-xs-6')[1].find_elements(By.TAG_NAME, 'div')[0].text
+            if url in url_list1:
                 flag = True
                 break
+            # print (url)
             url_list.append({'url': url, 'date': date, 'doctype': doctype})
+            url_list1.append(url)
+
         if flag == True:
             break
         
@@ -78,16 +80,17 @@ def scrapList():
             time.sleep(0.5)
 
     # return url_list
-    for url in url_list:
-        driver.get(url)
+    for one in url_list:
+        driver.get(one['url'])
         tmp = capture()
-        for one in tmp:
-            results.append(one)
+        tmp['date'] = one['date']
+        tmp['doctype'] = one['doctype']
+        results.append(tmp)
         
     # print(url_list)
 
 def doit(year):    
-    global driver
+    global driver, results
     all_chkBox = driver.find_elements(By.TAG_NAME, "md-checkbox")
     for one in all_chkBox:
         txt = one.get_attribute('aria-label')
@@ -97,10 +100,11 @@ def doit(year):
             scrapList()
 
     # time.sleep(3)
-    df = pd.DataFrame(results)
+    df = pd.DataFrame({'result' : results })
     df.to_json('data.json')
+    # print (results)
 
-if __name__ == "__main__":    
+if __name__ == "__main__":   
     makeDriver()
     doit(2007)
     driver.quit()
