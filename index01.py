@@ -5,6 +5,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 import time
+import sys
 
 results = []
 driver = None
@@ -15,8 +16,6 @@ def makeDriver():
     co.add_argument('--disable-infobars')
     co.add_argument('--disable-extensions')
     co.add_argument('--profile-directory=Default')
-    # co.add_argument("--incognito")
-    # co.add_argument("--headless")
     co.add_argument("--disable-plugins-discovery")
     co.add_argument("--start-maximized")
     co.add_argument("--no-sandbox")  # bypass OS security model
@@ -45,11 +44,6 @@ def capture():
         content.append({'title': one.find_element(By.CLASS_NAME, 'MuiAccordionSummary-root').text, "content": one.find_element(By.CLASS_NAME, 'MuiCollapse-container').text})
 
     return {'title': title, 'header': header, 'body': content}
-    # print(title)
-    # print()
-    # print(header)
-    # print()
-    # print(content)
 
 def scrapList():
     global driver, results
@@ -104,8 +98,20 @@ def doit(year):
     df.to_json('data.json')
     # print (results)
 
+
+def getYearFromArg():
+    if (len(sys.argv) < 2) :
+        return 2023
+    year = int(sys.argv[1])
+    if year is None:
+        year = 2023
+    if year < 2007 or year > 2023:
+        year = 2023
+    return year
+
 if __name__ == "__main__":   
     makeDriver()
-    doit(2007)
+    year = getYearFromArg()
+    doit(year)
     driver.quit()
 
